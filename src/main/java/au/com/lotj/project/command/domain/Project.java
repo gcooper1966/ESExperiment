@@ -3,7 +3,6 @@ package au.com.lotj.project.command.domain;
 import au.com.lotj.common.AggregateIdentifier;
 import au.com.lotj.common.AggregateWithId;
 import au.com.lotj.common.Event;
-import au.com.lotj.common.EventApplicator;
 import au.com.lotj.project.command.events.ProjectChangedEvent;
 import au.com.lotj.project.command.events.ProjectCommencedEvent;
 import au.com.lotj.project.command.events.ProjectCompletedEvent;
@@ -27,7 +26,7 @@ public class Project implements AggregateWithId {
     private ProjectCommandValidator validator;
     private ProjectState state;
     private Map<String, Object> properties;
-    private EventApplicator applicator;
+
 
     public Project(int ownerId, int decisionTreeId, ProjectCommandValidator validator) {
         this.ownerId = ownerId;
