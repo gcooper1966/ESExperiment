@@ -20,7 +20,7 @@ import static org.junit.Assert.assertThat;
  */
 public class ProjectTest {
 
-    private ProjectValidator validator = new ProjectValidator();
+   /* private ProjectValidator validator = new ProjectValidator();
     private int ownerId = 1;
     private int decisionTreeId = 1;
 
@@ -95,6 +95,6 @@ public class ProjectTest {
         events.add(evt);
 
         project.applyEvents(events);
-    }
+    }*/
 
 }
