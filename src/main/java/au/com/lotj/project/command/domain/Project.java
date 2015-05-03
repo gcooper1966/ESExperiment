@@ -3,9 +3,10 @@ package au.com.lotj.project.command.domain;
 import au.com.lotj.common.AggregateIdentifier;
 import au.com.lotj.common.AggregateWithId;
 import au.com.lotj.common.Event;
-import au.com.lotj.project.command.events.ProjectChangedEvent;
-import au.com.lotj.project.command.events.ProjectCommencedEvent;
-import au.com.lotj.project.command.events.ProjectCompletedEvent;
+import au.com.lotj.project.command.events.ProjectWasAbandoned;
+import au.com.lotj.project.command.events.ProjectWasChanged;
+import au.com.lotj.project.command.events.ProjectWasStarted;
+import au.com.lotj.project.command.events.ProjectWasCompleted;
 
 import java.util.*;
 
@@ -23,12 +24,12 @@ public class Project implements AggregateWithId {
     private int ownerId;
     private int decisionTreeId;
     private AggregateIdentifier id;
-    private ProjectCommandValidator validator;
+    private ProjectValidator validator;
     private ProjectState state;
     private Map<String, Object> properties;
 
 
-    public Project(int ownerId, int decisionTreeId, ProjectCommandValidator validator) {
+    public Project(int ownerId, int decisionTreeId, ProjectValidator validator) {
         this.ownerId = ownerId;
         this.decisionTreeId = decisionTreeId;
         this.validator = validator;
@@ -39,67 +40,61 @@ public class Project implements AggregateWithId {
     /**
      * Commences a new <code>Project</code> by processing the <code>CommenceProjectCommand</code>
      * which moves the project into a started state.
-     * @param cmd   the command to process
+     * @param evt   the command to start the Project
      * @return      the list of events to be processed by the caller
      * @throws InvalidProjectCommandException
      */
-    public List<Event> process(CommenceProjectCommand cmd) throws InvalidProjectCommandException {
-        UpdateProperties(cmd.getProperties());
-        validator.validate(this, cmd);
+    public void startProject(ProjectWasStarted evt) throws InvalidProjectCommandException {
+        UpdateProperties(evt.getProperties());
+        validator.validate(this);
         state = ProjectState.STARTED;
         createdDate = new Date();
         ArrayList<Event> events = new ArrayList<Event>();
-        events.add(new ProjectCommencedEvent(this, cmd.getProperties()));
-        return events;
+        events.add(new ProjectWasStarted(this, evt.getProperties()));
     }
 
     /**
      * Updates an existing <code>Project</code> by processing the <code>UpdateProjectCommand</code>
      * which adds or updates properties on the project without effecting the state of the project.
-     * @param cmd   the command to process
-     * @return      the list of events to be processed by the caller
+     * @param evt   the command to changeProject
      * @throws InvalidProjectCommandException
      */
-    public List<Event> process(UpdateProjectCommand cmd) throws InvalidProjectCommandException{
-        validator.validate(this, cmd);
-        UpdateProperties(cmd.getProperties());
+    public void changeProject(ProjectWasChanged evt) throws InvalidProjectCommandException{
+        validator.validate(this);
+        UpdateProperties(evt.getProperties());
         ArrayList<Event> events = new ArrayList<Event>();
-        events.add(new ProjectChangedEvent(this, cmd.getProperties()));
-        return events;
+        events.add(new ProjectWasChanged(this, evt.getProperties()));
     }
 
     /**
      * Completes an existing <code>Project</code> by processing the <code>CommenceProjectCommand</code>
      * which adds or updates properties on the project and moves the project into a closed state which
      * cannot be reopened.
-     * @param cmd   the command to be processed
-     * @return      the list of events to be processed by the caller
+     * @param evt   the event to be processed
      * @throws InvalidProjectCommandException
      */
-    public List<Event> process(CompleteProjectCommand cmd) throws InvalidProjectCommandException{
-        validator.validate(this, cmd);
+    public void completeProject(ProjectWasCompleted evt) throws InvalidProjectCommandException{
+        validator.validate(this);
         this.closedDate = Optional.of(new Date());
         state = ProjectState.COMPLETED;
-        UpdateProperties(cmd.getProperties());
+        UpdateProperties(evt.getProperties());
         ArrayList<Event> events = new ArrayList<Event>();
-        events.add(new ProjectCompletedEvent(this, cmd.getProperties()));
-        return events;
+        events.add(new ProjectWasCompleted(this, evt.getProperties()));
     }
 
     /**
      * Completes an existing <code>Project</code> by processing  the <code></code>
-     * @param cmd
+     * @param evt
      * @return
      * @throws InvalidProjectCommandException
      */
-    public List<Event> process(AbandonProjectCommand cmd)throws InvalidProjectCommandException{
-        validator.validate(this, cmd);
+    public void abandonProject(ProjectWasAbandoned evt)throws InvalidProjectCommandException{
+        validator.validate(this);
         this.closedDate = Optional.of(new Date());
         state = ProjectState.ABANDONED;
-        UpdateProperties(cmd.getProperties());
+        UpdateProperties(evt.getProperties());
         ArrayList<Event> events = new ArrayList<Event>();
-        events.add(new ProjectCompletedEvent(this, cmd.getProperties()));
-        return events;
+        events.add(new ProjectWasCompleted(this, evt.getProperties()));
     }
 
     public Project applyEvents(List<Event> eventHistory){
@@ -111,25 +106,25 @@ public class Project implements AggregateWithId {
         String eventClassName = evt.getClass().getName();
         switch (eventClassName){
             case "au.com.lotj.project.command.events.ProjectCommencedEvent":
-                this.apply((ProjectCommencedEvent) evt);
+                this.apply((ProjectWasStarted) evt);
                 break;
             case "au.com.lotj.project.command.events.ProjectChangedEvent":
-                this.apply((ProjectChangedEvent) evt);
+                this.apply((ProjectWasChanged) evt);
                 break;
             case "au.com.lotj.project.command.events.ProjectCompletedEvent":
-                this.apply((ProjectCompletedEvent) evt);
+                this.apply((ProjectWasCompleted) evt);
         }
     }
 
-    protected void apply(ProjectCommencedEvent e){
+    protected void apply(ProjectWasStarted e){
         System.out.println("Inside ProjectCommencedEvent");
     }
 
-    protected void apply(ProjectChangedEvent e){
+    protected void apply(ProjectWasChanged e){
         System.out.println("Inside ProjectChangedEvent");
     }
 
-    protected void apply(ProjectCompletedEvent e){
+    protected void apply(ProjectWasCompleted e){
         System.out.println("Inside ProjectCompletedEvent");
     }
 

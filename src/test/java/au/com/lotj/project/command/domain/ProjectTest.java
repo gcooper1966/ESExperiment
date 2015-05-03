@@ -1,9 +1,9 @@
 package au.com.lotj.project.command.domain;
 
 import au.com.lotj.common.Event;
-import au.com.lotj.project.command.events.ProjectChangedEvent;
-import au.com.lotj.project.command.events.ProjectCommencedEvent;
-import au.com.lotj.project.command.events.ProjectCompletedEvent;
+import au.com.lotj.project.command.events.ProjectWasChanged;
+import au.com.lotj.project.command.events.ProjectWasStarted;
+import au.com.lotj.project.command.events.ProjectWasCompleted;
 import au.com.lotj.project.utils.ProjectProperties;
 import org.junit.Test;
 
@@ -20,7 +20,7 @@ import static org.junit.Assert.assertThat;
  */
 public class ProjectTest {
 
-    private ProjectCommandValidator validator = new ProjectCommandValidator();
+    private ProjectValidator validator = new ProjectValidator();
     private int ownerId = 1;
     private int decisionTreeId = 1;
 
@@ -32,26 +32,26 @@ public class ProjectTest {
         assertThat(project.getState(), is(ProjectState.NEW));
 
         CommenceProjectCommand cmd = new CommenceProjectCommand(ProjectProperties.buildProjectProperties());
-        List<Event> events = project.process(cmd);
+        List<Event> events = project.changeProject(cmd);
 
         assertThat(project.getState(), is(ProjectState.STARTED));
         assertThat(events, hasSize(1));
-        assertThat(events.get(0), is(instanceOf(ProjectCommencedEvent.class)));
+        assertThat(events.get(0), is(instanceOf(ProjectWasStarted.class)));
     }
 
     @Test
     public void testValidUpdateOfProject() throws Exception {
         Project project = new Project(ownerId, decisionTreeId, validator);
         assertThat(project.getState(), is(ProjectState.NEW));
-        project.process(new CommenceProjectCommand(ProjectProperties.buildProjectProperties()));
+        project.changeProject(new CommenceProjectCommand(ProjectProperties.buildProjectProperties()));
         assertThat(project.getState(), is(ProjectState.STARTED));
 
         UpdateProjectCommand cmd = new UpdateProjectCommand(ProjectProperties.buildProjectProperties());
-        List<Event> events = project.process(cmd);
+        List<Event> events = project.changeProject(cmd);
 
         assertThat(project.getState(), is(ProjectState.STARTED));
         assertThat(events, hasSize(1));
-        assertThat(events.get(0), is(instanceOf(ProjectChangedEvent.class)));
+        assertThat(events.get(0), is(instanceOf(ProjectWasChanged.class)));
 
     }
 
@@ -59,38 +59,38 @@ public class ProjectTest {
     public void testValidCompletionOfProject() throws Exception {
         Project project = new Project(ownerId, decisionTreeId, validator);
         assertThat(project.getState(), is(ProjectState.NEW));
-        project.process(new CommenceProjectCommand(ProjectProperties.buildProjectProperties()));
+        project.changeProject(new CommenceProjectCommand(ProjectProperties.buildProjectProperties()));
         assertThat(project.getState(), is(ProjectState.STARTED));
-        project.process(new UpdateProjectCommand(ProjectProperties.buildProjectProperties()));
+        project.changeProject(new UpdateProjectCommand(ProjectProperties.buildProjectProperties()));
         assertThat(project.getState(), is(ProjectState.STARTED));
 
         CompleteProjectCommand cmd = new CompleteProjectCommand(ProjectProperties.buildProjectProperties());
-        List<Event> events = project.process(cmd);
+        List<Event> events = project.startProject(cmd);
 
         assertThat(project.getState(), is(ProjectState.COMPLETED));
         assertThat(events, hasSize(1));
-        assertThat(events.get(0), is(instanceOf(ProjectCompletedEvent.class)));
+        assertThat(events.get(0), is(instanceOf(ProjectWasCompleted.class)));
     }
 
     @Test
     public void testValidAbandonmentOfProject() throws Exception {
         Project project = new Project(ownerId, decisionTreeId, validator);
         assertThat(project.getState(), is(ProjectState.NEW));
-        project.process(new CommenceProjectCommand(ProjectProperties.buildProjectProperties()));
+        project.changeProject(new CommenceProjectCommand(ProjectProperties.buildProjectProperties()));
         assertThat(project.getState(), is(ProjectState.STARTED));
 
         AbandonProjectCommand cmd = new AbandonProjectCommand(ProjectProperties.buildProjectProperties());
-        List<Event> events = project.process(cmd);
+        List<Event> events = project.startProject(cmd);
 
         assertThat(project.getState(), is(ProjectState.ABANDONED));
         assertThat(events, hasSize(1));
-        assertThat(events.get(0), is(instanceOf(ProjectCompletedEvent.class)));
+        assertThat(events.get(0), is(instanceOf(ProjectWasCompleted.class)));
     }
 
     @Test
     public void testCanApplyEvents(){
         Project project = new Project(ownerId, decisionTreeId, validator);
-        ProjectCommencedEvent evt = new ProjectCommencedEvent(null, null);
+        ProjectWasStarted evt = new ProjectWasStarted(null, null);
         List<Event> events = new ArrayList<>();
         events.add(evt);
 

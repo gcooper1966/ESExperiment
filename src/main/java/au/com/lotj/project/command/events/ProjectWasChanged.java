@@ -8,8 +8,8 @@ import java.util.Map;
 /**
  * Created by Graeme Cooper on 21/04/2015.
  */
-public class ProjectChangedEvent extends ProjectEvent {
+public class ProjectWasChanged extends ProjectEvent {
 
-    public ProjectChangedEvent(Project project, Map<String, Object> properties) {super(project, properties); }
+    public ProjectWasChanged(Project project, Map<String, Object> properties) {super(project, properties); }
 
 }
